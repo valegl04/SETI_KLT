@@ -155,7 +155,12 @@ def eig_from_data(X: np.ndarray, logger=None) -> dict:
     from seti_klt.utils.io import SimpleLogger, LogLevel
 
     if logger is None:
-        logger = SimpleLogger(level=LogLevel.ERROR, console_output=False)
+        # file_output=False matters: this helper is called once per seed/scenario
+        # (120+ times in the stability sweep), and the default file_output=True
+        # would spit out a new timestamped log file on every single call.
+        logger = SimpleLogger(
+            level=LogLevel.ERROR, console_output=False, file_output=False
+        )
 
     K, W = X.shape
     klt = KLT(logger=logger)

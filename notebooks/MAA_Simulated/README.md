@@ -28,21 +28,52 @@ can be scored against it automatically.
 
 ---
 
+## Folder layout
+
+| File | Role |
+|---|---|
+| `multiantenna_klt_pipeline.ipynb` | Orchestration only — configure, generate, analyse, plot. |
+| `helpers.py` | Scenario **generation and loading** (`setigen` + `katpoint`). |
+| `seti_klt.scan_channels` | The **analysis** — per-channel MR-KLT sweep, shared with `../Meerkat_Real_Data/`. |
+
+The split is deliberate. `helpers.py` fabricates *test data*, so it stays local to this
+study — exactly as `Kritchman_Nadler/helpers.py` keeps `make_spiked_data` local. The
+per-channel MR-KLT sweep, by contrast, is genuine library code used by both the simulated
+and the real-data pipeline, so it lives in the `seti_klt` package as
+[`multichannel.py`](../../src/seti_klt/multichannel.py). The notebook itself is left thin
+and readable.
+
+### Outputs
+
+The notebook follows the project's standard I/O convention (`seti_klt.utils.io`):
+
+* generated scenarios (`.raw` + `.meta.json`) → `outputs/raw_data/`
+* figures → `outputs/figures/` (via `save_figure`)
+* run log → `outputs/logs/maa_pipeline.log` (via `SimpleLogger`)
+
+Everything under `outputs/` is git-ignored.
+
+---
+
 ## Notebook Overview
 
 ### `multiantenna_klt_pipeline.ipynb`
 The notebook is organised into numbered sections:
 
-1. **Generation** — helper machinery to synthesise multi-antenna GUPPI raw baseband data.
-2. **Define scenarios** — declare the signals to inject (kind, channel, drift rate, level,
-   and, for `per_antenna`, which antennas).
-3. **Load a scenario** — read a generated scenario back together with its `.meta.json`.
-4. **KLT analysis** — run the KLT per frequency channel (DC channel excluded), storing the
-   full eigenspectrum of every channel, and estimate the per-channel rank with the
-   Kritchman-Nadler estimator (`KN_rankEst`).
+1. **Setup & configuration** — logger, output directories, analysis parameters.
+   GPU acceleration for `setigen` is opt-in via `ENABLE_GPU` (needs the `[gpu]` extra).
+2. **Define & generate scenarios** — declare the signals to inject (kind, channel, drift
+   rate, level, and for `per_antenna` which antennas), then call
+   `helpers.generate_scenario`.
+3. **Load a scenario** — `helpers.load_scenario` returns a `(K, F, N_A)` cube plus its
+   ground-truth metadata.
+4. **Per-channel MR-KLT sweep** — `scan_channels` runs the MR-KLT, the Kritchman-Nadler
+   rank estimate, and the reconstruction for every channel (DC excluded), then the result
+   is **scored against the ground truth** (detected / missed / false positives).
 5. **Waterfall & PSD** — original vs. reconstructed time–frequency views.
 6. **Eigenvalue heatmap & rank per channel** — the full eigenspectrum across channels as a
-   heatmap, with `K_est` per channel and the injected ground-truth channels marked.
+   heatmap (normalised by each channel's noise floor), with `K_est` per channel and the
+   injected ground-truth channels marked.
 7. **Single-channel eigenspectrum** — a detailed look at the channel with the strongest
    dominant eigenvalue.
 

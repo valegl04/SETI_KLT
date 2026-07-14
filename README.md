@@ -62,6 +62,7 @@ The project is structured as an installable Python package (`seti_klt`) accompan
 │
 ├── src/seti_klt/               # CORE PACKAGE
 │   ├── KLT.py                  # Main KLT class: C-KLT / MR-KLT + RMT/Bayesian detection
+│   ├── multichannel.py         # Per-channel MR-KLT sweep over a multi-antenna cube
 │   ├── tracy_widom.py          # Exact Tracy–Widom₂ law (Painlevé II) and BBP helpers
 │   ├── kritchman_nadler.py     # Faithful port of the Kritchman & Nadler (2009) estimator
 │   └── utils/io.py             # I/O helpers, dynamic paths, and a structured logger

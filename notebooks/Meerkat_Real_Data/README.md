@@ -43,21 +43,36 @@ used elsewhere in the package applies unchanged.
 ## Notebook Overview
 
 ### `MRKLT_Meerkat.ipynb`
-1. **Loading:** reads a `.stamps` file via `seticore.viewer` and reports the per-stamp
+1. **Setup:** logger, output directories, analysis parameters (`POL`, `KN_ALPHA`).
+2. **Loading:** reads a `.stamps` file via `seticore.viewer` and reports the per-stamp
    shape and RMT aspect ratio `γ`.
-2. **Channel diagnostics:** computes the average power per frequency channel to locate the
+3. **Channel diagnostics:** computes the average power per frequency channel to locate the
    channel carrying the strongest signal.
-3. **MR-KLT:** applies `apply_mrklt` on the dominant channel and inspects the leading
+4. **MR-KLT:** applies `apply_mrklt` on the dominant channel and inspects the leading
    spatial eigenvector `|v₁|` across antennas.
-4. **Per-channel signal counting:** sweeps every channel, running MR-KLT plus the
-   Kritchman-Nadler rank estimator (`KN_rankEst`) to estimate how many signals each channel
-   carries, and measures the inter-channel coherence of the dominant eigenvector.
-5. **Visualisation:** original vs. reconstructed waterfalls, integrated PSD comparison, and
+5. **Per-channel sweep:** a single call to `seti_klt.scan_channels` runs MR-KLT plus the
+   Kritchman-Nadler rank estimator (`KN_rankEst`) on every channel, and
+   `ChannelScanResult.eigenvector_coherence()` measures how strongly each channel's
+   dominant eigenvector aligns with the reference channel's — which is how one physical
+   emitter spread across adjacent channels reveals itself.
+6. **Visualisation:** original vs. reconstructed waterfalls, integrated PSD comparison, and
    the MR-KLT eigenspectrum for the reference channel.
+
+### Outputs
+
+The notebook follows the project's standard I/O convention (`seti_klt.utils.io`): figures
+go to `outputs/figures/` via `save_figure`, and the run log to
+`outputs/logs/mrklt_meerkat.log` via `SimpleLogger`. Everything under `outputs/` is
+git-ignored.
 
 ---
 
 ## Related material
+
+The per-channel sweep is [`seti_klt.scan_channels`](../../src/seti_klt/multichannel.py),
+shared with the simulated multi-antenna pipeline in
+[`../MAA_Simulated/`](../MAA_Simulated/) — the same analysis code runs on synthetic data
+with known ground truth and on this real data.
 
 The theory behind MR-KLT, the spiked-covariance model, and the Kritchman-Nadler estimator
 is documented in [`../Kritchman_Nadler/README.md`](../Kritchman_Nadler/README.md). The

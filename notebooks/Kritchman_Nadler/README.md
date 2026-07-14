@@ -153,6 +153,11 @@ lives inside the repository (e.g. under `SETI_KLT/notebooks/`). Otherwise set th
 **Ground truth.** The notebook uses `helpers.make_spiked_data(...)`, which plants a *known*
 number of signals — the only way to say objectively which estimate is "right".
 
+**Outputs.** The notebook follows the project's standard I/O convention
+(`seti_klt.utils.io`): the figure goes to `outputs/figures/` via `save_figure`, and the run
+log to `outputs/logs/kritchman_nadler.log` via `SimpleLogger`. Everything under `outputs/`
+is git-ignored.
+
 ---
 
 ## 5. References

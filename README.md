@@ -11,10 +11,13 @@ This project explores the **Karhunen-Loève Transform (KLT)** as an alternative 
 2. **The Noise Subspace:** The remaining minor eigenvalues (uncorrelated thermal noise).
 
 ### Implemented KLT Variants
-The core `KLT` class currently tests three structural approaches:
-* **C-KLT (Covariance KLT):** Segments a 1D baseband stream into 2D windows to build the spatial covariance matrix.
-* **T-KLT (Toeplitz KLT):** Builds a deterministic Toeplitz matrix from the 1D autocorrelation function of the signal.
-* **MR-KLT (Multiple-Realization KLT):** Designed for multi-antenna or multi-polarization arrays where data is inherently 2D.
+The core `KLT` class exposes two structural approaches:
+* **C-KLT (Covariance KLT):** Segments a 1D baseband stream into 2D windows to build the temporal covariance matrix. Applied with `apply_cklt`.
+* **MR-KLT (Multiple-Realization KLT):** For multi-antenna or multi-polarization arrays where data is inherently 2D, building an antenna × antenna spatial covariance matrix. Applied with `apply_mrklt`.
+
+A third variant, **T-KLT (Toeplitz KLT)** — building a deterministic Toeplitz matrix from the 1D autocorrelation of the signal — is scaffolded but currently commented out pending validation.
+
+On top of the transforms, the class also implements an RMT-based detection layer (Marchenko–Pastur / BBP thresholds and an exact Tracy–Widom₂ Bayesian posterior) to decide whether the dominant eigenvalue is a genuine signal or a noise fluctuation.
 
 ---
 
@@ -44,32 +47,37 @@ $$
 
 4. **Low-Rank Truncated Reconstruction** By selecting only the sub-matrix of primary eigenvectors $V_M \in \mathbb{C}^{W \times M}$, the centered data matrix is projected onto the signal subspace and transformed back into the time domain. Re-adding the mean vector yields the denoised time-series matrix $\hat{X}$, which is then flattened back into a clean 1D baseband signal.
 
-*Note: The implementation of **T-KLT** (Toeplitz Autocorrelation) and **MR-KLT** (Multiple-Realization for multi-feed receiver arrays) are currently flagged as Work in Progress (WIP) and will be documented here upon baseline validation.*
+*Note: The **T-KLT** (Toeplitz autocorrelation) variant is scaffolded but currently commented out, pending baseline validation. It will be documented here once activated.*
 
 ---
 
 ## Repository Structure
 
-The project is structured as an installable Python package (`seti_klt`) accompanied by practical test notebooks. 
+The project is structured as an installable Python package (`seti_klt`) accompanied by practical test notebooks.
 
 ```text
 .
-├── pyproject.toml              # Package definition and dependencies manager (via uv)
-├── setigen_npol_fix.patch      # Essential patch for the Setigen library (NPOL header fix)
+├── pyproject.toml              # Package definition and dependencies (managed via uv)
+├── setigen_npol_fix.patch      # Patch for the setigen library (NPOL header fix)
 │
 ├── src/seti_klt/               # CORE PACKAGE
-│   ├── KLT.py                  # The main KLT class and algorithmic core
-│   └── utils/                  # I/O utilities, dynamic paths, and structured loggers
+│   ├── KLT.py                  # Main KLT class: C-KLT / MR-KLT + RMT/Bayesian detection
+│   ├── tracy_widom.py          # Exact Tracy–Widom₂ law (Painlevé II) and BBP helpers
+│   ├── kritchman_nadler.py     # Faithful port of the Kritchman & Nadler (2009) estimator
+│   └── utils/io.py             # I/O helpers, dynamic paths, and a structured logger
 │
-├── notebooks/                  # TESTS & ANALYSIS
-│   ├── injected_signals/       # Synthetic signal tests 
-│   └── voyager_1/              # Real-world telemetry extraction tests from GBT observations
+├── notebooks/                  # TESTS & ANALYSIS (one subfolder per study, each with a README)
+│   ├── Injected_Signal/        # Synthetic CW signal tests + the "Synchronous Phase" study
+│   ├── Voyager1_Signal/        # Real GBT telemetry extraction (Voyager 1 case study)
+│   ├── Kritchman_Nadler/       # Signal-counting: Kritchman–Nadler vs. Bayesian MR-KLT
+│   ├── MAA_Simulated/          # Multi-antenna simulated baseband KLT pipeline
+│   └── Meerkat_Real_Data/      # MR-KLT on real MeerKAT / Breakthrough Listen stamp data
 │
-├── data/                       # RAW DATA (Ignored in Git, local heavy files)
-└── outputs/                    # RESULTS (Locally generated figures, logs, and raw cuts)
+├── data/                       # RAW DATA (git-ignored, local heavy files)
+└── outputs/                    # RESULTS (locally generated figures, logs, CSVs)
 ```
 
-> **Note:** For detailed explanations on specific tests (like the "Synchronous Phase" phenomenon or Voyager 1 decoding), please refer to the specific `README.md` files located inside the `notebooks/` subdirectories.
+> **Note:** For detailed explanations of specific studies (the "Synchronous Phase" phenomenon, Voyager 1 decoding, or the signal-counting comparison), see the `README.md` inside each `notebooks/` subdirectory.
 
 ---
 
@@ -114,12 +122,15 @@ from seti_klt.utils.io import get_data_path
 klt = KLT()
 
 # 2. Load Raw Voltage Data
+#    file_stem is the GUPPI stem (e.g. "obs" for obs.0000.raw), used by
+#    setigen to recover the band parameters.
 data_path = get_data_path() / "blc3_guppi_57386_VOYAGER1_0004.0000.raw"
 klt.load_data_from_guppi(
-    file_path=str(data_path), 
-    channel=0, 
-    num_samples=2**20, 
-    polarization=0
+    file_path=str(data_path),
+    file_stem="blc3_guppi_57386_VOYAGER1_0004",
+    channel=0,
+    num_samples=2**20,
+    polarization=0,
 )
 
 # 3. Apply Covariance KLT
@@ -127,5 +138,5 @@ klt.apply_cklt(window_size=1024, n_eigenvectors=3)
 
 # 4. Extract and visualize results
 klt.plot_eigenspectrum(n_components=10)
-klt.plot_waterfall_comparison(fft_length=1024)
+klt.plot_waterfall_comparison(channel=0, fftlength=1024)
 ```

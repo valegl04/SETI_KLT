@@ -15,6 +15,7 @@ from .io import (
     SimpleLogger,
     get_data_path,
     get_notebooks_path,
+    get_random_file_path,
     get_project_root,
     prepare_output_dir,
     prepare_output_dirs,

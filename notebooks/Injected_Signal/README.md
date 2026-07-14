@@ -83,7 +83,7 @@ We achieve this by injecting our synthetic signals using a **fractional offset**
 
 ## Notebook Overview
 
-### `injected_signal.ipynb`
+### `CKLT_Injected_Signal.ipynb`
 This is the main testing ground for synthetic data. In this notebook, you will see the theory put into practice:
 1. **Generation:** We simulate a Polyphase Filterbank (PFB) output containing thermal noise and a weak CW signal.
 2. **Injection Strategy:** We explicitly use fractional offsets (like `0.3`) to bypass the synchronous phase problem.

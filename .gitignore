@@ -13,6 +13,9 @@ wheels/
 # data
 data/
 
+# locally generated results (figures, logs, CSVs)
+outputs/
+
 # security control for all heavy raw files
 *.raw
 
@@ -22,5 +25,5 @@ local_testing.ipynb
 # TODO list
 TODO.md
 
-# setigne pkg
+# setigen pkg (local editable install)
 setigen/

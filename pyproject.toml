@@ -11,14 +11,22 @@ requires-python = ">=3.12"
 dependencies = [
     "astropy>=7.2.0",
     "blimpy>=2.0.31",
-    "cupy-cuda13x>=14.1.1",
+    "katpoint>=0.10.2",
     "matplotlib>=3.10.9",
     "numpy>=2.4.6",
+    "pycapnp>=2.2.3",
     "pyqt6>=6.11.0",
     "scipy>=1.17.1",
     "setigen>=2.4.0",
     "setuptools<82",
     "tqdm",
+]
+
+[project.optional-dependencies]
+# GPU acceleration (roadmap / not required for the validated pipeline).
+# Install with:  uv pip install -e ".[gpu]"
+gpu = [
+    "cupy-cuda13x>=14.1.1",
 ]
 
 

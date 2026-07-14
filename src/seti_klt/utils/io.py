@@ -14,6 +14,7 @@ Provides:
 from __future__ import annotations
 
 import datetime
+import random
 from enum import Enum
 from pathlib import Path
 
@@ -77,11 +78,47 @@ def get_notebooks_path() -> Path:
     return nb_dir
 
 
+def get_random_file_path(target_directory: str, random_seed: int | None = None) -> str:
+    """Return the absolute path of a random file found under *target_directory*.
+
+    The directory is searched recursively; all files are collected and sorted
+    for reproducibility before one is drawn at random.
+
+    Args:
+        target_directory: Root directory to search (searched recursively).
+        random_seed:      Optional seed for a deterministic choice.
+
+    Returns:
+        Absolute path to the chosen file as a string, or an explanatory
+        message if the directory contains no files.
+    """
+    base_path = Path(target_directory)
+
+    all_files = [f for f in base_path.rglob("*") if f.is_file()]
+
+    if not all_files:
+        return f"No file found in this directory: {target_directory}"
+
+    all_files.sort()
+
+    if random_seed is not None:
+        random.seed(random_seed)
+
+    chosen_file = random.choice(all_files)
+    return str(chosen_file.absolute())
+
+
 def prepare_output_dir(path: str | Path | None = None, name: str = "outputs") -> Path:
     """Create a directory if it does not exist and return its path.
-    
-    If path is None, the directory will be created EXACTLY where the 
-    current script or notebook is being executed (Path.cwd()).
+
+    Args:
+        path: Directory to create.  When ``None``, the directory is created in
+              the current working directory (``Path.cwd()``), i.e. exactly where
+              the running script or notebook lives.
+        name: Directory name to use when *path* is ``None``.
+
+    Returns:
+        Path: Absolute path to the (now existing) directory.
     """
     if path is None:
         resolved = Path.cwd() / name
@@ -94,8 +131,16 @@ def prepare_output_dir(path: str | Path | None = None, name: str = "outputs") ->
 
 def prepare_output_dirs(base_dir: str | Path | None = None) -> dict[str, Path]:
     """Create the standard output subdirectory tree and return all paths.
-    
-    The tree will be generated under the current execution directory.
+
+    Builds ``outputs/{results,figures,logs}`` and returns a mapping from each
+    subdirectory name to its path.
+
+    Args:
+        base_dir: Root under which the ``outputs/`` tree is created.  When
+                  ``None``, the current working directory is used.
+
+    Returns:
+        dict[str, Path]: Mapping ``{"results": ..., "figures": ..., "logs": ...}``.
     """
     base = Path(base_dir) if base_dir else Path.cwd()
     
